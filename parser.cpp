@@ -1,8 +1,11 @@
 #include "parser.hpp"
 
 Parser::Parser(){
-    
+
 }
+
+int nStopWords = 319;
+string stopWords[319];
 
 bool comparator (long double i,long double j) { return (i>j); }
 
@@ -45,6 +48,17 @@ const vector<string> split(const string& s, const char& c)
 	if(buff != "") v.push_back(buff);
 	
 	return v;
+}
+
+bool verifyStopWords(string string){
+
+    int i;
+    for(i = 0; i < nStopWords; i++){
+        if (string.compare(stopWords[i]) == 0){
+            return true;
+        }
+    }
+    return false;
 }
 
 vector<Document> Parser::ProcessDocuments(){
@@ -250,6 +264,33 @@ vector<Query> Parser::ProcessQueries(){
     return queries;
 }
 
+void Parser::ProcessStopWords(){
+    
+
+        string line;
+        ifstream myfile ("stopwords");
+        // ifstream myfile ("text.txt");
+    
+        int c = 0;
+        if (myfile.is_open()){
+            while (!myfile.eof())
+            {
+                string sw = line;
+                stopWords[c] = sw;
+                c++;
+
+                getline(myfile, line);
+            }
+            myfile.close();
+        }
+        else cout << "Unable to open file"; 
+
+        // for (auto w : this->stopWords){
+        //     cout << w << endl;
+        // }
+    
+    }
+
 
 unordered_map<string, int> getTFs(const string &s, char delim) {
     stringstream ss(s);
@@ -271,9 +312,11 @@ unordered_map<string, int> getTFs(const string &s, char delim) {
 
 
         if(!newItem.empty()){
-            pair<string, int> pair (newItem,0);
-            tokens.insert(pair);
-            tokens.at(newItem)++;
+            if(verifyStopWords(newItem)){
+                pair<string, int> pair (newItem,0);
+                tokens.insert(pair);
+                tokens.at(newItem)++;
+            }
         }
     }
     return tokens;
@@ -309,7 +352,6 @@ unordered_map<string, unordered_map<int, int> > Parser::getVocabulary(vector<Doc
             else{
                 vocabulary.at(word.first).insert(docCount);
             }
-
 
         }
 
@@ -385,7 +427,7 @@ void Parser::processQuery(unordered_map<string, double> idfs, unordered_map<stri
     
             if(words.find(word.first) != words.end()){
                 tf = words.at(word.first);
-                cout << word.first << endl;
+                // cout << word.first << endl;
             }
     
             double idf = idfs.at(word.first);
@@ -427,10 +469,10 @@ void Parser::processQuery(unordered_map<string, double> idfs, unordered_map<stri
         sort(sims.begin(), sims.end(), comparator);
 
     
-        int p;
-        for (p=0;p<sims.size();p++){
-            std::cout << sims[p] << endl; 
-        }
+        // int p;
+        // for (p=0;p<sims.size();p++){
+        //     std::cout << sims[p] << endl; 
+        // }
     
     
             // cout << query.queryNumber << " - (";

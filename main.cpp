@@ -4,6 +4,7 @@
 #include <vector>
 #include <fstream>
 #include <string>
+#include <time.h>
 #include "document.hpp"
 #include "query.hpp"
 #include "parser.hpp"
@@ -14,7 +15,9 @@ using namespace std;
 
 int main(){
 
+    cout << "INDEXANDO..." << endl;
     Parser p;
+    p.ProcessStopWords();
     vector<Document> docs = p.ProcessDocuments();
     vector<Query> queries = p.ProcessQueries();
 
@@ -23,8 +26,12 @@ int main(){
     
     map<int, vector<double> > weights = p.getWeight(idfs, voc, docs);
 
+    cout << "QUERY..." << endl;
+    clock_t t;
+    t = clock();
     p.processQuery(idfs, voc, weights, queries[0]);
-
+    t = clock() - t;
+    cout << ((float)t)/CLOCKS_PER_SEC << endl;
 
     // ofstream vocab, idffile, wfs;
     // vocab.open ("output/vocabulary.txt");

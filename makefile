@@ -1,6 +1,6 @@
 ### C++ Arguments
 CC=g++
-CF=-std=c++11 -Wall -g
+CF=-std=c++11 -Wall
 
 ### Program Arguments
 NAME=main
