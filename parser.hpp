@@ -34,8 +34,10 @@ class Parser{
         void ProcessStopWords();
         unordered_map<string, unordered_map<int, int> > getVocabulary(vector<Document>);
         unordered_map<string, double> getIdfs(unordered_map<string, unordered_map<int, int> >);
-        map<int, vector<double> > getWeight(unordered_map<string, double>, unordered_map<string, unordered_map<int, int> >, vector<Document>);
-        void processQuery(unordered_map<string, double>, unordered_map<string, unordered_map<int, int> >, map<int, vector<double> >, Query);
+        unordered_map<int, vector<double> > getWeight(unordered_map<string, double>, unordered_map<string, unordered_map<int, int> >, vector<Document>);
+        vector<pair<int, double> > processQuery(unordered_map<string, double>, unordered_map<string, unordered_map<int, int> >, unordered_map<int, vector<double> >, Query);
 
+        double precisionN(vector<pair<int, double> > sims, Query q);
+        double calculeMAP(vector<pair<int, double> >, Query);
     };
 #endif

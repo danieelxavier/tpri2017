@@ -24,14 +24,21 @@ int main(){
     unordered_map<string, unordered_map<int, int> > voc = p.getVocabulary(docs);
     unordered_map<string, double> idfs = p.getIdfs(voc);
     
-    map<int, vector<double> > weights = p.getWeight(idfs, voc, docs);
+    unordered_map<int, vector<double> > weights = p.getWeight(idfs, voc, docs);
 
     cout << "QUERY..." << endl;
     clock_t t;
-    t = clock();
-    p.processQuery(idfs, voc, weights, queries[0]);
-    t = clock() - t;
-    cout << ((float)t)/CLOCKS_PER_SEC << endl;
+    // for(auto q: queries){
+        t = clock();
+        vector<pair<int, double> > similarities = p.processQuery(idfs, voc, weights, queries[0]);
+        t = clock() - t;
+        cout << ((float)t)/CLOCKS_PER_SEC << endl;
+
+        cout << p.precisionN(similarities, queries[0]); << endl;
+    // }
+
+
+    
 
     // ofstream vocab, idffile, wfs;
     // vocab.open ("output/vocabulary.txt");

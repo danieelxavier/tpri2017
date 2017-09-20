@@ -7,7 +7,7 @@ Parser::Parser(){
 int nStopWords = 319;
 string stopWords[319];
 
-bool comparator (long double i,long double j) { return (i>j); }
+bool comparator (double i,double j) { return (i>j); }
 
 bool startsWith(const std::string& text,const std::string& token)
 {
@@ -59,6 +59,47 @@ bool verifyStopWords(string string){
         }
     }
     return false;
+}
+
+void intercalar (pair<int, double> v[], pair<int, double> aux[],int ini1, int ini2,int fim2)
+{
+    int in1=ini1,in2=ini2,fim1=in2-1,au=0,i;
+    while(in1<=fim1 && in2<=fim2)
+    {
+        if (v[in1].second > v[in2].second)
+        {
+            aux[au++] = v[in1++];
+        }
+        else
+        {
+            aux[au++] = v[in2++];
+        }
+    }
+    while(in1<=fim1)
+    {
+        aux[au++] = v[in1++];
+    }
+    while(in2<=fim2)
+    {
+        aux[au++] = v[in2++];
+    }
+
+    for(i=0;i<au;i++){
+        v[i+ini1]=aux[i];
+    }
+}
+
+void mergeSort (pair<int, double> v[],int esq, int dir)
+{
+    int meio,i;
+    pair<int, double> aux[dir+1];
+    if(esq<dir)
+    {
+        meio=(esq+dir)/2;
+        mergeSort(v,esq,meio);
+        mergeSort(v,meio+1,dir);
+        intercalar(v,aux,esq,meio+1,dir);  
+    }
 }
 
 vector<Document> Parser::ProcessDocuments(){
@@ -379,9 +420,9 @@ unordered_map<string, double> Parser::getIdfs(unordered_map<string, unordered_ma
     return idfs;
 }
 
-map<int, vector<double> > Parser::getWeight(unordered_map<string, double> idfs, unordered_map<string, unordered_map<int, int> > vocabulary, vector<Document> docs){
+unordered_map<int, vector<double> > Parser::getWeight(unordered_map<string, double> idfs, unordered_map<string, unordered_map<int, int> > vocabulary, vector<Document> docs){
 
-    map<int, vector<double> > weights;
+    unordered_map<int, vector<double> > weights;
 
     for(auto& doc: docs){
 
@@ -409,89 +450,116 @@ map<int, vector<double> > Parser::getWeight(unordered_map<string, double> idfs, 
     return weights;
 }
 
-void Parser::processQuery(unordered_map<string, double> idfs, unordered_map<string, unordered_map<int, int> > vocabulary, map<int, vector<double> > wDocs, Query query){
+vector<pair<int, double> > Parser::processQuery(unordered_map<string, double> idfs, unordered_map<string, unordered_map<int, int> > vocabulary, unordered_map<int, vector<double> > wDocs, Query query){
     
     unordered_map<string,int> words = getTFs(query.query, ' ');
     
-        // map<int, vector<double> > weights;
+
+
+    double wQuery[vocabulary.size()];
+
+
+    int c = 0;
+    for(auto& word: vocabulary){
         
-        // for(auto& doc: docs){
-    
-        vector<double> wQuery;
+        int tf = 0;
 
+        // if(words.find(word.first) != words.end()){
+            auto t = words.find(word.first);
+            if(t != words.end())
+                tf = t->second;
 
-    
-        for(auto& word: vocabulary){
-            
-            int tf = 0;
-    
-            if(words.find(word.first) != words.end()){
-                tf = words.at(word.first);
-                // cout << word.first << endl;
-            }
-    
-            double idf = idfs.at(word.first);
-    
-            double w = idf * (double)tf;
-            wQuery.push_back(w);
-    
-        }
+            // cout << word.first << endl;
+        // }
 
-        vector<long double> sims;
+        double idf = idfs.at(word.first);
+
+        double w = idf * (double)tf;
+        wQuery[c] = w;
+
+        c++;
+    }
+
+    pair<int, double> sims[wDocs.size()];
+
+    int i;
     
-        int i;
+    for(i=1; i < wDocs.size(); i++){
+
+        double num = 0;
+        double den1 = 0;
+        double den2 = 0;
         
-        for(i=1; i < wDocs.size(); i++){
+        int j;
+        for(j=0; j < wDocs[i].size(); j++){
 
-            double num = 0;
-            double den1 = 0;
-            double den2 = 0;
-            
-            int j;
-            for(j=0; j < wDocs[i].size(); j++){
-
+            if(wDocs[i][j] > 0){
                 num += (wDocs[i][j] * wQuery[j]);
 
                 den1 += pow(wDocs[i][j], 2);
-
-                den2 += pow(wQuery[j], 2);
             }
 
-            long double sim = num / (sqrt(den1) * sqrt(den2));
-
-            sims.push_back(sim);     
-
-
-            // cout << i << " - " << sim << endl;
-            
+            den2 += pow(wQuery[j], 2);
         }
-    
-        sort(sims.begin(), sims.end(), comparator);
 
-    
-        // int p;
-        // for (p=0;p<sims.size();p++){
-        //     std::cout << sims[p] << endl; 
-        // }
-    
-    
-            // cout << query.queryNumber << " - (";
-    
-            // for(auto& w: wQuery){
-            //     cout << w << ", ";
-            // }
-    
-            // cout << ")" << endl;
-    
-    
+        double sim = num / (sqrt(den1) * sqrt(den2));
+
+        pair<int, double> sd (i, sim);
+        sims[i] = sd;     
+
+
+        // cout << i << " - " << sim << endl;
         
-    
-        // weights.insert(pair<int, vector<double> >(doc.recordNumber, wDoc));
-    
-        // }
-    
-    
+    }
+
+    mergeSort(sims, 0, wDocs.size()-1);
 
 
+    vector<pair<int, double> > similarities;
+    int p;
+    int t = 1;
+    for (p=0;p<wDocs.size();p++){
+        std::cout << t << "\t-\t" << sims[p].first << "\t-\t" << sims[p].second << endl; 
+        if(sims[p].second > 0)
+            similarities.push_back(sims[p]);
+        t++;
+    }
+
+
+    return similarities;
+}
+
+
+
+
+//Método que retorna o número de documentos relevantes em um ponto N do ranking de similaridades
+int relevantesRetornados(Query query, int N){
+    
+    int c = 0;
+    for (int i = 0; i < N; i++) {
+        if(isRelevante(consulta, consulta.getSimilaridades().get(i).getDocumento())){
+                c++;
+        }
+    }
+    return c;
+}
+
+//Método que verifica se um documento é relevante para uma consulta
+bool isRelevante(Consulta consulta, int documento){
+
+    for (AvaliacaoConsulta ac : consulta.getAvaliacoes()) {
+        
+        if(ac.getRecordNumber() == documento){
+            return true;
+        }
+    }
+    return false;
+}
+
+double Parser::precisionN(vector<pair<int, double> > sims, Query q){
+    
+}
+
+double Parser::calculeMAP(vector<pair<int, double> > sims, Query q){
 
 }

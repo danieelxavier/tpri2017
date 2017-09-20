@@ -11,7 +11,7 @@ class Result{
         Result(){}
 
         int doc;
-        long double sim;
+        double sim;
 
 };
 
